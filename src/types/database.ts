@@ -12,7 +12,7 @@ export interface Restaurant {
   updated_by_admin_id: string | null
   updated_at: string
   created_at: string
-  /** Configuração do cardápio público; vindo do Supabase como jsonb. */
+  /** Configuração do cardápio público (jsonb no Postgres). */
   theme?: unknown
 }
 

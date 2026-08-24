@@ -10,9 +10,11 @@ async function migrate() {
 
   const here = path.dirname(fileURLToPath(import.meta.url))
   const candidates = [
-    path.resolve('/workspace/db/schema.sql'),
+    path.resolve(process.cwd(), 'db/schema.sql'),
+    path.resolve(process.cwd(), '../db/schema.sql'),
     path.resolve(here, '../../db/schema.sql'),
     path.resolve(here, '../db/schema.sql'),
+    path.resolve('/workspace/db/schema.sql'),
   ]
 
   let schemaPath: string | null = null

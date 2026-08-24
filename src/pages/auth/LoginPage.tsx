@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { loginWithPassword } from '@/hooks/useAuth'
 import { AuthLayout } from '@/layouts/AuthLayout'
-import { getSupabase } from '@/services/supabase'
+import { ApiError } from '@/services/api'
 import { useAuthStore } from '@/store/authStore'
 import type { ReactNode } from 'react'
 import { useState } from 'react'
@@ -26,11 +27,18 @@ export function LoginPage() {
     e.preventDefault()
     setError(null)
     setLoading(true)
-    const { error: err } = await getSupabase().auth.signInWithPassword({ email, password })
-    setLoading(false)
-    if (err) {
-      setError(err.message === 'Invalid login credentials' ? 'Email ou senha inválidos.' : err.message)
-      return
+    try {
+      await loginWithPassword(email, password)
+    } catch (err) {
+      const message =
+        err instanceof ApiError && err.status === 401
+          ? 'Email ou senha inválidos.'
+          : err instanceof Error
+            ? err.message
+            : 'Falha ao entrar.'
+      setError(message)
+    } finally {
+      setLoading(false)
     }
   }
 

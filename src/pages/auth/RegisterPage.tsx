@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { registerWithPassword } from '@/hooks/useAuth'
 import { AuthLayout } from '@/layouts/AuthLayout'
-import { getSupabase } from '@/services/supabase'
+import { ApiError } from '@/services/api'
 import { useAuthStore } from '@/store/authStore'
 import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
@@ -33,17 +34,18 @@ export function RegisterPage() {
       return
     }
     setLoading(true)
-    const { data, error: err } = await getSupabase().auth.signUp({
-      email: normalizedEmail,
-      password,
-    })
-    setLoading(false)
-    if (err) {
-      setError(err.message)
-      return
-    }
-    if (!data.session) {
-      setError('Cadastro criado, mas a sessão não foi iniciada. Tente entrar na tela de login.')
+    try {
+      await registerWithPassword(normalizedEmail, password)
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : 'Falha ao criar conta.'
+      setError(message)
+    } finally {
+      setLoading(false)
     }
   }
 

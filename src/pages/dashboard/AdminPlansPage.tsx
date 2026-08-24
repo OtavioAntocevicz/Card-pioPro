@@ -108,9 +108,9 @@ export function AdminPlansPage() {
     <div className="mx-auto max-w-5xl">
       <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Planos (admin)</h1>
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-        Altere o plano de cada restaurante. O dono continua sendo o{' '}
-        <code className="text-xs text-slate-700 dark:text-slate-300">user_id</code> no Supabase
-        (Authentication → Users).
+        Altere o plano de cada restaurante. O dono é identificado pelo{' '}
+        <code className="text-xs text-slate-700 dark:text-slate-300">user_id</code> na tabela{' '}
+        <code className="text-xs text-slate-700 dark:text-slate-300">users</code> do Postgres.
       </p>
 
       <Card className="mt-6">
@@ -273,7 +273,8 @@ export function AdminPlansPage() {
       ) : null}
 
       <p className="mt-6 text-xs text-slate-500 dark:text-slate-500">
-        Para ver o email do dono, abra o Supabase → Authentication → Users e procure pelo UUID acima.
+        Para ver o email do dono, consulte a tabela{' '}
+        <code className="text-xs">users</code> no Postgres do Railway pelo UUID acima.
       </p>
       {selectedAuditRestaurant ? (
         <Card className="mt-6">

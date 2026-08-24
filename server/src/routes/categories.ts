@@ -18,22 +18,27 @@ categoryRoutes.get('/restaurants/:restaurantId/categories', async (c) => {
   try {
     const restaurantId = c.req.param('restaurantId')
     const menuId = c.req.query('menuId')
+    const isPublic = c.req.query('public') === '1'
 
-    const result = menuId
-      ? await query<CategoryRow>(
-          `select id, restaurant_id, menu_id, name, created_at
-           from public.categories
-           where restaurant_id = $1 and menu_id = $2
-           order by created_at asc`,
-          [restaurantId, menuId],
-        )
-      : await query<CategoryRow>(
-          `select id, restaurant_id, menu_id, name, created_at
-           from public.categories
-           where restaurant_id = $1
-           order by created_at asc`,
-          [restaurantId],
-        )
+    const clauses = ['restaurant_id = $1']
+    const params: string[] = [restaurantId]
+    if (menuId) {
+      params.push(menuId)
+      clauses.push(`menu_id = $${params.length}`)
+    }
+    if (isPublic) {
+      clauses.push(
+        `exists (select 1 from public.menus m where m.id = categories.menu_id and m.is_active = true)`,
+      )
+    }
+
+    const result = await query<CategoryRow>(
+      `select id, restaurant_id, menu_id, name, created_at
+       from public.categories
+       where ${clauses.join(' and ')}
+       order by created_at asc`,
+      params,
+    )
 
     return c.json({ categories: result.rows })
   } catch (err) {

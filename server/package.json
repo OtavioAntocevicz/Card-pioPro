@@ -10,7 +10,8 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "db:migrate": "tsx src/migrate.ts"
+    "db:migrate": "node dist/migrate.js",
+    "db:migrate:dev": "tsx src/migrate.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.14.1",

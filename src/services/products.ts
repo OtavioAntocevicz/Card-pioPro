@@ -1,79 +1,9 @@
-import type { Product, ProductInsert, ProductUpdate } from '@/types/database'
-import { getSupabase, getSupabasePublic } from './supabase'
+import {
+  createProduct,
+  deleteProduct,
+  fetchProducts,
+  updateProduct,
+  uploadProductImage,
+} from './data'
 
-const BUCKET = 'product-images'
-
-export async function fetchProducts(
-  restaurantId: string,
-  menuId?: string,
-  opts?: { asPublicVisitor?: boolean },
-): Promise<Product[]> {
-  const supabase = opts?.asPublicVisitor ? getSupabasePublic() : getSupabase()
-  let query = supabase
-    .from('products')
-    .select('*')
-    .eq('restaurant_id', restaurantId)
-    .order('created_at', { ascending: true })
-
-  if (menuId) query = query.eq('menu_id', menuId)
-
-  const { data, error } = await query
-
-  if (error) throw error
-  return (data ?? []) as Product[]
-}
-
-export async function uploadProductImage(
-  restaurantId: string,
-  file: File,
-): Promise<string> {
-  const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
-  const safeExt = ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext) ? ext : 'jpg'
-  const path = `${restaurantId}/${crypto.randomUUID()}.${safeExt}`
-
-  const { error: upError } = await getSupabase().storage
-    .from(BUCKET)
-    .upload(path, file, { cacheControl: '3600', upsert: false })
-
-  if (upError) throw upError
-
-  const { data } = getSupabase().storage.from(BUCKET).getPublicUrl(path)
-  return data.publicUrl
-}
-
-export async function createProduct(row: ProductInsert): Promise<Product> {
-  const { data, error } = await getSupabase().rpc('create_product', {
-    p_restaurant_id: row.restaurant_id,
-    p_menu_id: row.menu_id,
-    p_category_id: row.category_id,
-    p_name: row.name,
-    p_description: row.description,
-    p_price: row.price,
-    p_image_url: row.image_url,
-    p_is_available: row.is_available,
-    p_highlight_badge: row.highlight_badge ?? null,
-  })
-
-  if (error) throw error
-  return data as Product
-}
-
-export async function updateProduct(
-  id: string,
-  patch: ProductUpdate,
-): Promise<Product> {
-  const { data, error } = await getSupabase()
-    .from('products')
-    .update(patch)
-    .eq('id', id)
-    .select()
-    .single()
-
-  if (error) throw error
-  return data as Product
-}
-
-export async function deleteProduct(id: string): Promise<void> {
-  const { error } = await getSupabase().from('products').delete().eq('id', id)
-  if (error) throw error
-}
+export { createProduct, deleteProduct, fetchProducts, updateProduct, uploadProductImage }
