@@ -1,0 +1,8 @@
+# Local uploads (dev). Production should use a persistent volume.
+uploads/
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.log

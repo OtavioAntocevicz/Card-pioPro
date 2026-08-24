@@ -1,6 +1,6 @@
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { Button } from '@/components/ui/Button'
-import { getSupabase } from '@/services/supabase'
+import { logout } from '@/hooks/useAuth'
 import { useAuthStore } from '@/store/authStore'
 import { fetchIsPlatformAdmin } from '@/services/platformAdmin'
 import { useQuery } from '@tanstack/react-query'
@@ -46,7 +46,7 @@ export function DashboardLayout() {
   const isPlatformAdmin = Boolean(adminQuery.data)
 
   async function handleLogout() {
-    await getSupabase().auth.signOut()
+    await logout()
     setSession(null)
     navigate('/login', { replace: true })
   }

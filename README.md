@@ -1,11 +1,11 @@
 # CardápioPro
 
-SaaS de cardápio digital para restaurantes: painel admin (categorias, produtos, imagens) e cardápio público por slug (`/m/:slug`). Stack: React, Vite, TypeScript, Tailwind CSS, Zustand, TanStack Query, Supabase (Auth, Postgres, Storage) e PWA.
+SaaS de cardápio digital para restaurantes: painel admin (categorias, produtos, imagens) e cardápio público por slug (`/m/:slug`). Stack: React, Vite, TypeScript, Tailwind CSS, Zustand, TanStack Query, API Node (Hono) + Postgres no Railway e PWA.
 
 ## Pré-requisitos
 
-- Node.js 20+ (recomendado)
-- Conta e projeto no [Supabase](https://supabase.com)
+- Node.js 20+
+- Projeto no [Railway](https://railway.com) com Postgres + serviço da API
 
 ## Configuração
 
@@ -13,56 +13,90 @@ SaaS de cardápio digital para restaurantes: painel admin (categorias, produtos,
 
    ```bash
    npm install
+   npm install --prefix server
    ```
 
-2. Copie o exemplo de variáveis e preencha com os dados do seu projeto (Settings → API):
+2. Copie o exemplo de variáveis do frontend:
 
    ```bash
    cp .env.example .env
    ```
 
-   - `VITE_SUPABASE_URL` — Project URL (`https://xxxx.supabase.co`)
-   - `VITE_SUPABASE_ANON_KEY` — chave **anon** (JWT) do mesmo projeto
+   - Em desenvolvimento local, deixe `VITE_API_URL` vazio — o Vite faz proxy de `/api` e `/uploads` para `http://localhost:3001`.
+   - Em produção (Vercel), defina `VITE_API_URL` como a URL pública da API, incluindo `/api` (ex.: `https://api.exemplo.up.railway.app/api`).
 
-3. No Supabase, execute o SQL (SQL Editor → colar e rodar **o arquivo inteiro**):
+3. Configure a API (`server/.env`):
 
-   - `supabase/migrations/20260507150000_full_schema_single_file.sql` — schema único (menus, planos, auditoria, tema `jsonb`, RLS etc.; compatível com projeto novo ou base já existente)
+   ```bash
+   cp server/.env.example server/.env
+   ```
 
-4. Em Authentication, habilite o provedor **Email** e ajuste URLs de redirect se necessário.
+   - `DATABASE_URL` — connection string do Postgres (no Railway: `${{Postgres.DATABASE_URL}}`)
+   - `JWT_SECRET` — segredo forte para assinar tokens
+   - `PUBLIC_API_URL` — URL pública da API (sem `/api`), usada nas URLs de upload
+   - `CORS_ORIGIN` — origem do frontend (ou `*` em desenvolvimento)
 
-### Administrar planos (você, dono da plataforma)
+4. Aplique o schema:
 
-Não é obrigatório “ver todos os logins” no app: emails e contas ficam em **Supabase → Authentication → Users**. Para mudar o **plano** de um restaurante pelo painel:
+   ```bash
+   npm run db:migrate --prefix server
+   ```
 
-1. No SQL Editor (uma vez), inclua seu usuário como admin da plataforma. O `user_id` é o UUID do seu usuário em Authentication → Users:
+   O SQL canônico fica em `db/schema.sql`.
+
+5. Rode API e frontend:
+
+   ```bash
+   npm run dev --prefix server
+   npm run dev
+   ```
+
+### Administrar planos
+
+1. Inclua seu usuário como admin (UUID da tabela `users`):
 
    ```sql
    insert into public.platform_admins (user_id)
    values ('cole-aqui-o-uuid-do-seu-usuario');
    ```
 
-2. Faça login no CardápioPro e abra **Planos (admin)** no menu lateral (`/app/admin/plans`). Lá você altera `free` / `pro` / `enterprise` por restaurante. A lista mostra o `user_id` do dono; use-o para cruzar com a lista de usuários no Supabase se precisar do email.
+2. Faça login e abra **Planos (admin)** (`/app/admin/plans`).
 
-Se a criação do schema falhar por **restaurante duplicado por usuário** (em bases já existentes), apague ou una linhas extras na tabela `restaurants` (mesmo `user_id`) antes de reaplicar.
+## Deploy
 
-## Deploy na Vercel
+### API + Postgres (Railway)
 
-O Vite embute variáveis `VITE_*` **no build**. Sem elas no painel da Vercel, o site quebra ou mostra tela de configuração.
+Projeto Railway **CardapioPro**:
+
+- Serviço **Postgres** — banco de dados
+- Serviço **api** — pasta `server/`, variáveis:
+  - `DATABASE_URL=${{Postgres.DATABASE_URL}}`
+  - `JWT_SECRET=...`
+  - `PUBLIC_API_URL=https://<dominio-da-api>`
+  - `CORS_ORIGIN=https://<dominio-do-frontend>`
+  - `PORT` (Railway injeta automaticamente)
+
+Build/start sugeridos na pasta `server`:
+
+```bash
+npm install && npm run build
+npm run db:migrate && npm start
+```
+
+### Frontend (Vercel)
 
 1. **Project → Settings → Environment Variables**
-2. Adicione:
-   - `VITE_SUPABASE_URL` = URL do projeto (`https://xxxx.supabase.co`)
-   - `VITE_SUPABASE_ANON_KEY` = chave **anon** (JWT)
-3. Marque **Production** e **Preview** (se usar branch preview).
-4. Faça um **novo deploy** (Redeploy) depois de salvar — deploys antigos não recebem variáveis novas sozinhos.
+2. Adicione `VITE_API_URL` = URL da API + `/api`
+3. Redeploy após salvar
 
 O arquivo `vercel.json` redireciona rotas do React Router para `index.html`.
 
-### Checklist antes do primeiro deploy
+### Checklist
 
-- [ ] Variáveis `VITE_SUPABASE_*` definidas no provedor (Vercel, etc.)
-- [ ] Script SQL `20260507150000_full_schema_single_file.sql` aplicado no mesmo projeto Supabase
-- [ ] Bucket de storage `product-images` existe e políticas batem com as migrações (se usar fotos)
+- [ ] Postgres no Railway com `db/schema.sql` aplicado
+- [ ] API no Railway saudável (`GET /api/health`)
+- [ ] `VITE_API_URL` no build da Vercel
+- [ ] `CORS_ORIGIN` liberando o domínio do frontend
 
 ## CI (GitHub Actions)
 
@@ -70,16 +104,19 @@ No push/PR para `main` ou `master`, o workflow `.github/workflows/ci.yml` roda `
 
 ## Scripts
 
-| Comando            | Descrição                    |
-| ------------------ | ---------------------------- |
-| `npm run dev`      | Servidor de desenvolvimento  |
-| `npm run build`    | Build de produção            |
-| `npm run preview`  | Servir pasta `dist`          |
-| `npm run lint`     | ESLint                       |
-| `npm run test`     | Vitest (watch)               |
-| `npm run test:run` | Vitest uma vez (CI / scripts)|
+| Comando                       | Descrição                    |
+| ----------------------------- | ---------------------------- |
+| `npm run dev`                 | Frontend (Vite)              |
+| `npm run build`               | Build do frontend            |
+| `npm run preview`             | Servir pasta `dist`          |
+| `npm run lint`                | ESLint                       |
+| `npm run test` / `test:run`   | Vitest                       |
+| `npm run dev --prefix server` | API local                    |
+| `npm run db:migrate --prefix server` | Aplica `db/schema.sql` |
 
-## Estrutura (frontend)
+## Estrutura
 
-- `src/components`, `src/pages`, `src/layouts`, `src/hooks`, `src/services`, `src/store`, `src/routes`, `src/types`, `src/utils`
-
+- `src/` — frontend
+- `server/` — API Hono + Postgres
+- `db/schema.sql` — schema Railway
+- `supabase/` — schema legado (referência; não usado pelo app atual)

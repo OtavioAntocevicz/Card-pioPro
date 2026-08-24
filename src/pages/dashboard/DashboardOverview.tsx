@@ -140,7 +140,7 @@ export function DashboardOverview() {
     return (
       <div className="mx-auto max-w-xl space-y-4 rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-900 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-100">
         <p className="font-medium text-red-800 dark:text-red-50">
-          Não foi possível consultar o Supabase.
+          Não foi possível consultar a API.
         </p>
         <p className="rounded-lg bg-white/80 px-3 py-2 font-mono text-xs text-red-800 dark:bg-black/20 dark:text-red-200/95">
           {detail}
@@ -150,29 +150,29 @@ export function DashboardOverview() {
             <p>
               Isso costuma significar que a{' '}
               <strong className="text-red-950 dark:text-slate-200">migração SQL</strong> ainda não foi
-              executada neste projeto.
+              executada no Postgres do Railway.
             </p>
             <ol className="list-decimal space-y-1 pl-5 text-xs">
-              <li>Abra o Supabase → SQL Editor → New query.</li>
               <li>
-                Cole o arquivo{' '}
-                <code className="text-brand-700 dark:text-brand-300">
-                  supabase/migrations/20260507150000_full_schema_single_file.sql
-                </code>{' '}
-                do projeto e rode (Run).
+                No serviço da API, rode <code className="text-brand-700 dark:text-brand-300">npm run db:migrate</code>.
               </li>
               <li>
-                Confira em Table Editor se a tabela{' '}
+                Ou aplique <code className="text-brand-700 dark:text-brand-300">db/schema.sql</code> no
+                Postgres.
+              </li>
+              <li>
+                Confira se a tabela{' '}
                 <code className="text-brand-700 dark:text-brand-300">restaurants</code> existe.
               </li>
             </ol>
           </div>
         ) : (
           <p className="text-xs text-red-800/90 dark:text-slate-400">
-            Confira se <code className="text-red-950 dark:text-slate-300">VITE_SUPABASE_URL</code> e{' '}
-            <code className="text-red-950 dark:text-slate-300">VITE_SUPABASE_ANON_KEY</code> são do{' '}
-            <strong>mesmo projeto</strong> no painel (Settings → API) e reinicie o{' '}
-            <code className="text-red-950 dark:text-slate-300">npm run dev</code>.
+            Confira se a API no Railway está no ar e se{' '}
+            <code className="text-red-950 dark:text-slate-300">VITE_API_URL</code> aponta para ela. Em
+            desenvolvimento local, use o proxy do Vite (<code className="text-red-950 dark:text-slate-300">/api</code>)
+            com <code className="text-red-950 dark:text-slate-300">npm run dev</code> na pasta{' '}
+            <code className="text-red-950 dark:text-slate-300">server</code>.
           </p>
         )}
       </div>
